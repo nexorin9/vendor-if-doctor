@@ -1,0 +1,41 @@
+# vendor-if-doctor 配置文件示例（task 21 默认 fixture）
+#
+# 优先级：环境变量 > 本文件 > 默认值
+# 凭据一律从环境变量读（vendor.<name>.token / password 仅作 fallback 演示）；
+# 本文件不写任何明文凭据。
+#
+# 字段说明：
+#   vendor.doctor.handover_dir  : 巡检 Markdown 报告输出根目录
+#   vendor.doctor.tickets_dir   : 工单草稿 JSONL 输出根目录
+#   vendor.doctor.sqlite_path   : 巡检历史 SQLite 数据库路径
+#   vendor.doctor.log_level     : 全局日志级别（DEBUG / INFO / WARNING / ERROR）
+#   vendor.doctor.validate_credentials : 启动期是否校验所有凭据 env 已设置
+#   vendor.<name>.host          : 该 vendor 的主机名（env VENDOR_<NAME>_HOST 覆盖）
+#   vendor.<name>.token         : 该 vendor 的 token（env VENDOR_<NAME>_TOKEN 覆盖；
+#                                 alias VENDOR_<NAME>_AUTH_TOKEN 也认）
+#   vendor.<name>.password      : basic auth 用户名口令
+#   vendor.<name>.apikey        : apikey auth 注入
+
+vendor:
+  doctor:
+    handover_dir: ./out
+    tickets_dir: ./out
+    sqlite_path: ./vendor_if_doctor.db
+    log_level: INFO
+    validate_credentials: false
+
+  # 院内厂商配置（演示条目；真实部署请按本院接口调整）
+  his:
+    # 走 env VENDOR_HIS_HOST；alias VENDOR_HIS_AUTH_TOKEN 也认
+    host: his.example-hospital.local
+  lis:
+    host: lis.example-hospital.local
+  pacs:
+    host: pacs.example-hospital.local
+  emr:
+    host: emr.example-hospital.local
+  medical-insurance:
+    # SOAP basic auth 走 VENDOR_MI_USERNAME + VENDOR_MI_PASSWORD
+    host: medical-insurance.example-hospital.local
+  regional:
+    host: regional.example-hospital.local

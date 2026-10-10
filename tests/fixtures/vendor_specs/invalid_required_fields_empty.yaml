@@ -1,0 +1,28 @@
+# valid schema: 但在 spec 层故意没声明 required_fields（语义上是错配）
+# 用于验证 required_fields 校验失败时的 fail-fast
+vendor_spec:
+  schema_version: "1.0"
+  run_window_minutes: 30
+  severity_policy: "default"
+  interfaces:
+    - vendor_id: lis
+      interface_id: report-push
+      display_name: "LIS 检验报告接口"
+      protocol: http
+      host: 127.0.0.1
+      port: 8443
+      base_path: /v2
+      timeout_seconds: 5
+      auth:
+        type: bearer
+        secret_env: VENDOR_LIS_TOKEN
+      sample_endpoint:
+        http:
+          method: GET
+          path: /reports/sample
+          headers: {}
+          body: ""
+      # 故意为空（会被 JSON Schema 二次校验拒掉）
+      required_fields: []
+  inspection:
+    fail_fast: false

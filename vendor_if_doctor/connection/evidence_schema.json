@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://vendor-if-doctor.local/connection/evidence_schema.json",
+  "title": "Evidence",
+  "description": "巡检 Evidence 协议一致性 schema — protocol-agnostic 字段对所有协议统一；protocol-specific 字段走 oneOf 分支（HTTP / HL7v2）。由 tests/contract/test_protocol_consistency.py 加载并跨协议校验。",
+  "type": "object",
+  "required": [
+    "summary",
+    "command",
+    "latency_ms",
+    "status",
+    "failure_class",
+    "response_body",
+    "evidence_hash",
+    "meta",
+    "step_name",
+    "vendor_id",
+    "interface_id"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "summary": {"type": "string"},
+    "command": {"type": "string"},
+    "latency_ms": {"type": "integer", "minimum": 0},
+    "status": {
+      "type": "string",
+      "enum": ["pass", "fail", "skip", "degraded"]
+    },
+    "failure_class": {"type": ["string", "null"]},
+    "response_body": {"type": ["string", "null"]},
+    "evidence_hash": {"type": ["string", "null"]},
+    "step_name": {
+      "type": "string",
+      "enum": ["preflight", "auth", "list", "sample", "assert"]
+    },
+    "vendor_id": {"type": "string", "minLength": 1},
+    "interface_id": {"type": "string", "minLength": 1},
+    "meta": {
+      "type": "object",
+      "description": "协议 / vendor 相关的额外字段。HTTP / HL7 各自有不同字段；跨协议时差异字段走 oneOf 分支。",
+      "oneOf": [
+        {
+          "$comment": "HTTP / WebService / SQL（任何含 http_status 的协议）",
+          "type": "object",
+          "required": ["http_status"],
+          "properties": {
+            "http_status": {"type": "integer", "minimum": 100, "maximum": 599},
+            "preflight_ms": {"type": "integer", "minimum": 0},
+            "truncated": {"type": "boolean"},
+            "evidence_hash": {"type": "string"},
+            "first_failed_step": {"type": "string"},
+            "skipped_due_to": {"type": "string"},
+            "actual_count": {"type": "integer", "minimum": 0},
+            "encoding": {"type": "string"},
+            "bom_stripped": {"type": "boolean"},
+            "raw_size": {"type": "integer", "minimum": 0},
+            "duplicate_keys": {"type": "array", "items": {"type": "string"}},
+            "parse_error": {"type": ["string", "null"]},
+            "reason": {"type": "string"},
+            "exception": {"type": "string"},
+            "allowed": {"type": "array", "items": {"type": "integer"}}
+          },
+          "additionalProperties": true
+        },
+        {
+          "$comment": "HL7v2 / MLLP（任何含 ack_msa1 的协议，不含 http_status）",
+          "type": "object",
+          "required": ["ack_msa1"],
+          "allOf": [{"not": {"required": ["http_status"]}}],
+          "properties": {
+            "ack_msa1": {"type": "string"},
+            "ack_received": {"type": "boolean"},
+            "ack_bytes": {"type": "integer", "minimum": 0},
+            "evidence_hash": {"type": "string"},
+            "first_failed_step": {"type": "string"},
+            "skipped_due_to": {"type": "string"},
+            "timeout_s": {"type": "number", "minimum": 0},
+            "host": {"type": "string"},
+            "port": {"type": "integer", "minimum": 1, "maximum": 65535},
+            "preflight_ms": {"type": "integer", "minimum": 0},
+            "exception": {"type": "string"},
+            "latency_ms": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": true
+        },
+        {
+          "$comment": "通用 meta：preflight 失败短路 / not_implemented / 占位 placeholder / auth step（不含 http_status / ack_msa1）",
+          "type": "object",
+          "allOf": [
+            {"not": {"required": ["http_status"]}},
+            {"not": {"required": ["ack_msa1"]}}
+          ],
+          "properties": {
+            "skipped_due_to": {"type": "string"},
+            "first_failed_step": {"type": "string"},
+            "reason": {"type": "string"},
+            "exception": {"type": "string"},
+            "host": {"type": "string"},
+            "port": {"type": "integer", "minimum": 1, "maximum": 65535},
+            "preflight_ms": {"type": "integer", "minimum": 0},
+            "auth_type": {"type": "string"}
+          },
+          "additionalProperties": true
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vendor-if-doctor"
+version = "0.1.0"
+description = "医院厂商接口连通巡检库：信息科值班员日跑一条命令，5 分钟拿到昨日新接入或变更的厂商接口健康清单 + 工单草稿 + 巡检历史。"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "ChaosForge", email = "chaosforge@example.invalid" },
+]
+keywords = [
+    "hospital",
+    "interface",
+    "healthcheck",
+    "hl7",
+    "mlnet",
+    "monitoring",
+    "vendor",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Monitoring",
+    "Topic :: Medical/Health",
+    "Operating System :: POSIX",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+    "httpx>=0.27",
+    "pydantic>=2.5",
+    "pyyaml>=6.0",
+    "typer>=0.12",
+    "jsonschema>=4.21",
+    "jinja2>=3.1",
+    "hl7apy>=1.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-httpserver>=1.0",
+]
+
+[project.scripts]
+vendor-if-doctor = "vendor_if_doctor.cli.main:app"
+
+[tool.setuptools]
+packages = ["vendor_if_doctor"]
+
+[tool.setuptools.package-data]
+vendor_if_doctor = ["spec/*.json", "renderers/templates/*.j2"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"

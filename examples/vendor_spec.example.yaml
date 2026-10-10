@@ -1,0 +1,162 @@
+# vendor-if-doctor 示例配置：HIS 门诊挂号接口的健康巡检
+# 字段对齐：vendor_spec.schema.json（启动期校验）
+# 实际生产请按 信息科/SRE 与厂商现场沟通结果替换 host / port / secret_env
+
+vendor_spec:
+  schema_version: "1.0"
+  run_window_minutes: 30
+  severity_policy: "default"
+
+  interfaces:
+    # 1) HIS 门诊挂号 — HTTP + Basic Auth，调用挂号号源列表与样例资源
+    - vendor_id: his
+      interface_id: outpatient-register
+      display_name: "HIS 门诊挂号接口"
+      protocol: http
+      host: ${VENDOR_HIS_HOST}
+      port: 80
+      base_path: /api/v1
+      timeout_seconds: 5
+      auth:
+        type: basic
+        username_env: VENDOR_HIS_USERNAME
+        secret_env: VENDOR_HIS_PASSWORD
+        realm: "HIS Outpatient"
+      sample_endpoint:
+        http:
+          method: GET
+          path: /register/slot?dept=outpatient
+          headers:
+            Accept: application/json
+          body: ""
+          # task 6 接入：list 端点 + 分页参数；list 步骤会跑这条额外 GET
+          list_endpoint:
+            method: GET
+            path: /register/slots
+            headers: {}
+            page_param: page
+            page_size_param: size
+            page_size: 50
+            expected_count_min: 1
+      required_fields:
+        - "$.code"
+        - "$.patient_id"
+        - "$.slot_id"
+
+    # 2) LIS 检验报告 — HTTP + Bearer Auth（独立验证，演示多 vendor 并发）
+    - vendor_id: lis
+      interface_id: report-push
+      display_name: "LIS 检验报告接口"
+      protocol: http
+      host: ${VENDOR_LIS_HOST}
+      port: 8443
+      base_path: /v2
+      timeout_seconds: 5
+      auth:
+        type: bearer
+        secret_env: VENDOR_LIS_TOKEN
+      sample_endpoint:
+        http:
+          method: GET
+          path: /reports/sample
+          headers:
+            Accept: application/json
+          body: ""
+      required_fields:
+        - "$.report_id"
+        - "$.patient_id"
+        - "$.test_code"
+
+    # 3) PACS 检查预约 — HTTP + API Key header 注入
+    - vendor_id: pacs
+      interface_id: study-booking
+      display_name: "PACS 检查预约接口"
+      protocol: http
+      host: ${VENDOR_PACS_HOST}
+      port: 443
+      base_path: /pacs
+      timeout_seconds: 8
+      auth:
+        type: apikey
+        secret_env: VENDOR_PACS_APIKEY
+        inject: header
+        header_name: X-API-Key
+      sample_endpoint:
+        http:
+          method: GET
+          path: /studies/slot
+          headers:
+            Accept: application/json
+          body: ""
+      required_fields:
+        - "$.study_uid"
+        - "$.schedule_time"
+
+    # 4) EMR 病历提交 — HL7v2 + MLLP over TCP（演示 HL7 协议路径）
+    - vendor_id: emr
+      interface_id: emr-submit
+      display_name: "电子病历 EMR 提交接口"
+      protocol: hl7v2
+      host: ${VENDOR_EMR_MLLP_HOST}
+      port: 6661
+      timeout_seconds: 6
+      auth:
+        type: mllp
+      sample_endpoint:
+        hl7v2:
+          message_type: ADT^A01
+          trigger_event: A01
+      required_fields:
+        - "MSH-9"
+        - "PID-3"
+        - "PV1-7"
+
+    # 5) 医保结算 — WebService/SOAP（占位协议，演示 not_implemented 不误判）
+    - vendor_id: medical-insurance
+      interface_id: claim-submit
+      display_name: "医保结算接口（占位）"
+      protocol: webservice
+      host: ${VENDOR_MI_HOST}
+      port: 8080
+      base_path: /soap
+      timeout_seconds: 10
+      auth:
+        type: basic
+        username_env: VENDOR_MI_USERNAME
+        secret_env: VENDOR_MI_PASSWORD
+      sample_endpoint:
+        http:
+          method: POST
+          path: /claim/submit
+          headers:
+            Content-Type: text/xml
+          body: ""
+      required_fields:
+        - "$.claim_id"
+
+    # 6) 区域平台 — SQL 探活（占位协议）
+    - vendor_id: regional
+      interface_id: read-only
+      display_name: "区域平台只读连接（占位）"
+      protocol: sql
+      host: ${VENDOR_REGIONAL_HOST}
+      port: 1433
+      timeout_seconds: 8
+      auth:
+        type: none
+      sample_endpoint:
+        http:
+          method: GET
+          path: /
+          headers: {}
+          body: ""
+      required_fields:
+        - "$.ok"
+
+  # 巡检编排选项
+  inspection:
+    fail_fast: false                # 跑完所有 interface，便于周报
+    handover_dir: "./out/${DATE}"
+    tickets_dir: "./out/${DATE}"
+    sqlite_db: "./out/vendor_if_doctor.db"
+    redact_credentials: true

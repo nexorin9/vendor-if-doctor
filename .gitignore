@@ -1,0 +1,66 @@
+# Env / secrets
+.env
+.envrc
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual envs
+venv/
+.venv/
+env/
+
+# Runtime data / logs
+data/
+logs/
+tmp/
+temp/
+.cache/
+*.log
+*.tmp
+*.temp
+
+# SQLite runtime DB (only include examples/, never commit live vendor_if_doctor.db)
+vendor_if_doctor.db
+vendor_if_doctor.db-journal
+vendor_if_doctor.db-wal
+vendor_if_doctor.db-shm
+
+# Demo artefacts (out/)
+out/
+samples-out/
+
+# Build / coverage / tooling
+node_modules/
+.next/
+.nuxt/
+coverage/
+target/
+.tox/
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Round metadata (must not enter GitHub repo)
+score.json
+
+# Keep public assets
+!qrcode.jpg
+!docs/screenshots/*.png

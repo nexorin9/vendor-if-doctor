@@ -1,0 +1,43 @@
+# vendor-if-doctor 示例：插件协议 mllp_v3 演示
+#
+# 本文件演示 task 33 接入的插件机制。需设置 VENDOR_DOCTOR_PLUGINS 环境变量
+# 才能让 load_vendor_spec 校验通过：
+#
+#   VENDOR_DOCTOR_PLUGINS=tests.fixtures.plugin_smoke \
+#     python -m vendor_if_doctor lint examples/mllp_v3_spec.yaml
+#
+# 启动期 plugin loader 会读 VENDOR_DOCTOR_PLUGINS env，逐个 import；
+# tests.fixtures.plugin_smoke 模块体里调用 register_protocol_via_plugin("mllp_v3", MLLPv3Connection)，
+# 同时把 "mllp_v3" 注入到 JSON Schema 的 protocol 枚举里。
+
+vendor_spec:
+  schema_version: "1.0"
+  run_window_minutes: 30
+  severity_policy: "default"
+
+  interfaces:
+    # 1) 老 HIS MLLPv3 — 插件占位，演示 protocol=mllp_v3 走 plugin 路径
+    - vendor_id: his-legacy
+      interface_id: mllp-v3-submit
+      display_name: "老 HIS MLLPv3 提交接口（插件占位）"
+      protocol: mllp_v3
+      host: ${VENDOR_HIS_LEGACY_HOST}
+      port: 6662
+      timeout_seconds: 6
+      auth:
+        type: mllp
+      sample_endpoint:
+        hl7v2:
+          message_type: ADT^A01
+          trigger_event: A01
+      required_fields:
+        - "MSH-9"
+        - "PID-3"
+
+  # 巡检编排选项
+  inspection:
+    fail_fast: false
+    handover_dir: "./out/${DATE}"
+    tickets_dir: "./out/${DATE}"
+    sqlite_db: "./out/vendor_if_doctor.db"
+    redact_credentials: true

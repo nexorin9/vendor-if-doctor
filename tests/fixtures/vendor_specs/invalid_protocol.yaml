@@ -1,0 +1,18 @@
+# 故意 protocol 非法 / sample_endpoint 形态不对齐
+vendor_spec:
+  schema_version: "1.0"
+  interfaces:
+    - vendor_id: experimental
+      interface_id: probe
+      display_name: "实验协议"
+      protocol: ftp                  # 不在枚举里
+      host: probe.local
+      port: 21
+      auth:
+        type: none
+      sample_endpoint:
+        http:
+          method: GET
+          path: /
+      required_fields:
+        - "$.ok"

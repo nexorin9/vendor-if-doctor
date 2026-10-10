@@ -1,0 +1,18 @@
+# 故意 required_fields 为空的 spec：用于验证必填字段二次校验
+vendor_spec:
+  schema_version: "1.0"
+  interfaces:
+    - vendor_id: lis
+      interface_id: report-push
+      display_name: "LIS 检验报告接口"
+      protocol: http
+      host: lis.local
+      port: 8443
+      auth:
+        type: bearer
+        secret_env: VENDOR_LIS_TOKEN
+      sample_endpoint:
+        http:
+          method: GET
+          path: /reports/sample
+      required_fields: []   # 故意空

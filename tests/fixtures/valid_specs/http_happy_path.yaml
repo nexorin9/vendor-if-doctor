@@ -1,0 +1,31 @@
+# valid fixture: HTTP happy path 最小样例（与 mock_http_server 配套）
+# 用于 contract tests / examples demo
+vendor_spec:
+  schema_version: "1.0"
+  run_window_minutes: 30
+  severity_policy: "default"
+  interfaces:
+    - vendor_id: his
+      interface_id: outpatient-register
+      display_name: "HIS 门诊挂号接口"
+      protocol: http
+      host: 127.0.0.1
+      port: 9999
+      base_path: /api/v1
+      timeout_seconds: 5
+      auth:
+        type: bearer
+        secret_env: VENDOR_HIS_TOKEN
+      sample_endpoint:
+        http:
+          method: GET
+          path: /register/slot
+          headers:
+            Accept: application/json
+          body: ""
+      required_fields:
+        - "$.code"
+        - "$.patient_id"
+        - "$.slot_id"
+  inspection:
+    fail_fast: false

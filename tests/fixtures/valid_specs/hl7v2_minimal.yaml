@@ -1,0 +1,26 @@
+# valid fixture: HL7v2 + MLLP 最小样例
+# 用于 contract tests / examples/demo_hl7v2.sh
+vendor_spec:
+  schema_version: "1.0"
+  run_window_minutes: 30
+  severity_policy: "default"
+  interfaces:
+    - vendor_id: emr
+      interface_id: emr-submit
+      display_name: "电子病历 EMR 提交接口"
+      protocol: hl7v2
+      host: 127.0.0.1
+      port: 9998
+      timeout_seconds: 5
+      auth:
+        type: mllp
+      sample_endpoint:
+        hl7v2:
+          message_type: ADT^A01
+          trigger_event: A01
+      required_fields:
+        - "MSH-9"
+        - "PID-3"
+        - "PV1-7"
+  inspection:
+    fail_fast: false

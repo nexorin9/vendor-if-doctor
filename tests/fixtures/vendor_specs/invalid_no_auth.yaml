@@ -1,0 +1,19 @@
+# 故意缺 auth.secret_env 的 spec：用于验证启动期 fail-fast
+vendor_spec:
+  schema_version: "1.0"
+  interfaces:
+    - vendor_id: his
+      interface_id: outpatient-register
+      display_name: "HIS 门诊挂号接口"
+      protocol: http
+      host: his.local
+      port: 80
+      auth:
+        type: bearer
+        # 故意不写 secret_env
+      sample_endpoint:
+        http:
+          method: GET
+          path: /register/slot
+      required_fields:
+        - "$.code"

@@ -1,0 +1,173 @@
+{# 厂商接口连通巡检 · 周报 HTML 模板 — 字段含义
+   - generated_at: 渲染时间（ISO8601 UTC）
+   - week_start / week_end: 窗口起止日（YYYY-MM-DD，UTC）
+   - window_days: 窗口天数（默认 7）
+   - total_runs: 窗口内 run 总数（跨业务系统）
+   - systems: List[{
+       system, total, healthy, degraded, failed, skipped,
+       connectivity_pct, trend_spark, anomalies: [{
+         vendor_id, interface_id, first_failed_step,
+         failure_class, severity, evidence_hash_short, started_at, status
+       }]
+     }]
+   注：所有字段已经过 html.escape + _coarse_redact，本模板使用 |safe 也不会
+   把 HTML 注入。
+-#}<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>厂商接口连通巡检 · 周报</title>
+<style>
+  body { font-family: Tahoma, "PingFang SC", "Microsoft YaHei", sans-serif;
+         background: #f8f9fa; color: #2c3e50; margin: 0; padding: 24px; }
+  h1 { font-size: 22px; margin: 0 0 8px 0; }
+  h2 { font-size: 16px; margin: 24px 0 8px 0; padding-bottom: 4px;
+       border-bottom: 1px solid #dee2e6; }
+  h3 { font-size: 14px; margin: 12px 0 4px 0; }
+  .meta { color: #6c757d; font-size: 12px; margin-bottom: 16px; }
+  .summary { display: flex; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; }
+  .summary .card { background: #fff; border: 1px solid #dee2e6;
+                   border-radius: 4px; padding: 12px 16px; min-width: 120px; }
+  .summary .card .label { font-size: 12px; color: #6c757d; }
+  .summary .card .value { font-size: 24px; font-weight: 600; margin-top: 4px; }
+  table { border-collapse: collapse; width: 100%; background: #fff;
+          border: 1px solid #dee2e6; font-size: 13px; }
+  th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid #e9ecef; }
+  th { background: #e9ecef; font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .status-healthy { color: #28a745; font-weight: 600; }
+  .status-degraded { color: #b8860b; font-weight: 600; }
+  .status-failed { color: #dc3545; font-weight: 600; }
+  .status-skipped { color: #6c757d; }
+  .severity-critical { color: #dc3545; font-weight: 600; }
+  .severity-warning { color: #b8860b; font-weight: 600; }
+  .severity-info { color: #6c757d; }
+  .trend-spark { font-family: Menlo, Consolas, monospace; letter-spacing: 2px; }
+  .anomaly-list table th { background: #f8d7da; }
+  .anomaly-critical { background: #f8d7da; }
+  .anomaly-warning { background: #fff3cd; }
+  .anomaly-info { background: #e2e3e5; }
+  code { font-family: Menlo, Consolas, monospace; font-size: 12px;
+         background: #f1f3f5; padding: 1px 4px; border-radius: 2px; }
+  .footnote { color: #6c757d; font-size: 11px; margin-top: 24px; }
+</style>
+</head>
+<body>
+
+<h1>厂商接口连通巡检 · 周报</h1>
+<div class="meta">
+  生成时间：<code>{{ generated_at }}</code> ·
+  窗口：<code>{{ week_start }} → {{ week_end }}</code>（{{ window_days }} 天，UTC）·
+  本周覆盖 run 总数：<code>{{ total_runs }}</code>
+</div>
+
+<div class="summary">
+  <div class="card">
+    <div class="label">巡检 run 总数</div>
+    <div class="value">{{ total_runs }}</div>
+  </div>
+  <div class="card">
+    <div class="label">业务系统数</div>
+    <div class="value">{{ systems|length }}</div>
+  </div>
+  {% set _critical_count = systems|sum(attribute='failed') %}
+  <div class="card">
+    <div class="label">本周失败 run</div>
+    <div class="value status-failed">{{ _critical_count }}</div>
+  </div>
+</div>
+
+<h2>连通率（按业务系统）</h2>
+<table class="system-rate">
+  <thead>
+    <tr>
+      <th>系统</th>
+      <th class="num">总数</th>
+      <th class="num">healthy</th>
+      <th class="num">degraded</th>
+      <th class="num">failed</th>
+      <th class="num">skipped</th>
+      <th class="num">连通率</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for sys in systems %}
+    <tr>
+      <td><code>{{ sys.system }}</code></td>
+      <td class="num">{{ sys.total }}</td>
+      <td class="num status-healthy">{{ sys.healthy }}</td>
+      <td class="num status-degraded">{{ sys.degraded }}</td>
+      <td class="num status-failed">{{ sys.failed }}</td>
+      <td class="num status-skipped">{{ sys.skipped }}</td>
+      <td class="num">{{ sys.connectivity_pct }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>趋势（近 {{ window_days }} 天 ASCII 火花图）</h2>
+<table class="trend-spark">
+  <thead>
+    <tr>
+      <th>系统</th>
+      <th>连通率趋势</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for sys in systems %}
+    <tr>
+      <td><code>{{ sys.system }}</code></td>
+      <td><span class="trend-spark">{{ sys.trend_spark }}</span></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>异常清单（failed / degraded）</h2>
+<table class="anomaly-list">
+  <thead>
+    <tr>
+      <th>严重度</th>
+      <th>系统</th>
+      <th>接口</th>
+      <th>首次失败步骤</th>
+      <th>失败分类</th>
+      <th>证据 hash（前 8）</th>
+      <th>发生时间 (UTC)</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for sys in systems %}
+    {% for anom in sys.anomalies %}
+      <tr class="anomaly-{{ anom.severity }}">
+        <td><span class="severity-{{ anom.severity }}">{{ anom.severity }}</span></td>
+        <td><code>{{ anom.vendor_id }}</code></td>
+        <td><code>{{ anom.interface_id }}</code></td>
+        <td><code>{{ anom.first_failed_step }}</code></td>
+        <td><code>{{ anom.failure_class }}</code></td>
+        <td><code>{{ anom.evidence_hash_short }}</code></td>
+        <td><code>{{ anom.started_at }}</code></td>
+      </tr>
+    {% endfor %}
+  {% endfor %}
+  {% set _has_anomalies = false %}
+  {% for sys in systems %}
+    {% if sys.anomalies %}{% set _has_anomalies = true %}{% endif %}
+  {% endfor %}
+  {% if not _has_anomalies %}
+    <tr><td colspan="7" style="text-align:center; color:#28a745; padding:16px;">
+      本周无异常 run，所有业务系统连通正常。
+    </td></tr>
+  {% endif %}
+  </tbody>
+</table>
+
+<div class="footnote">
+  本文件由 <code>vendor_if_doctor/renderers/weekly_html.py</code> 渲染。
+  数据源：SQLite 巡检历史（<code>inspection_runs</code> + 全部 <code>inspection_runs_y*</code> 月表）。
+  凭据纪律：本文档已对 Authorization / Bearer / X-API-Key / token / password
+  做字符串级过滤，不含任何明文凭据。
+</div>
+
+</body>
+</html>

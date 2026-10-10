@@ -1,0 +1,63 @@
+{# 值班交接清单（jinja2 模板） — 字段含义
+   - generated_at: 渲染时间（ISO8601）
+   - total_runs: 本次巡检涉及 vendor 条数
+   - healthy_count / degraded_count / failed_count / skipped_count: 三/四态计数
+   - runs: List[{
+       vendor_id, interface_id, fqn, status ('healthy'|'degraded'|'failed'|'skipped'),
+       first_failed_step, evidence: List[{
+         summary, command, latency_ms, status, failure_class,
+         evidence_hash, step_name, response_body_snippet, meta
+       }]
+     }] — runs 已按 (status 优先级 desc, vendor_id asc, interface_id asc) 排序
+-#}
+# 厂商接口连通巡检 · 值班交接清单
+
+- 生成时间：`{{ generated_at }}`
+- 本次覆盖 vendor 条数：**{{ total_runs }}**
+- 健康 / 降级 / 失败 / 占位：**{{ healthy_count }} / {{ degraded_count }} / {{ failed_count }} / {{ skipped_count }}**
+
+> 凭据纪律：本清单由 `vendor-if-doctor` 自动生成，**绝不**含 Authorization、Bearer、X-API-Key、token、password 等凭据字段值。值班员人审后粘入工单系统。
+
+{% if runs|length == 0 %}
+**本次巡检结果为空**，可能 vendor_spec.yaml 未匹配到任何 interface。请检查 spec 配置。
+{% endif %}
+
+{% for run in runs %}
+## Vendor: {{ run.vendor_id }}
+
+- FQN：`{{ run.fqn }}`
+- interface_id：`{{ run.interface_id }}`
+
+### Status: {{ run.status }}
+
+- 首次失败步骤：`{{ run.first_failed_step or '—' }}`
+- 失败分类：`{{ run.failure_class or '—' }}`
+- 证据条数：{{ run.evidence|length }}
+- 巡检耗时合计：{{ run.total_latency_ms }} ms
+
+{% if run.evidence %}
+#### 步骤证据
+
+| # | step | status | failure_class | latency_ms | evidence_hash | summary |
+|---|------|--------|---------------|------------|---------------|---------|
+{% for ev in run.evidence %}
+| {{ loop.index }} | `{{ ev.step_name }}` | {{ ev.status }} | `{{ ev.failure_class or '—' }}` | {{ ev.latency_ms }} | `{{ ev.evidence_hash or '—' }}` | {{ ev.summary }} |
+{% endfor %}
+
+{% endif %}
+{% if run.suggested_actions %}
+#### 建议动作（按 failure_class）
+
+{% for action in run.suggested_actions %}
+- `{{ action }}`
+{% endfor %}
+{% endif %}
+
+---
+{% endfor %}
+
+## 产物说明
+
+- 本文件由 `vendor_if_doctor/renderers/handover_md.py` 渲染。
+- 工单草稿（待办）见同级 `tickets.jsonl`，由值班员人审后粘入工单系统。
+- 巡检历史 SQLite 见 `vendor_if_doctor.db`，可用 `vendor-if-doctor history` 命令查询。

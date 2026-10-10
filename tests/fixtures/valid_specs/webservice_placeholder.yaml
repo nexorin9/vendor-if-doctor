@@ -1,0 +1,29 @@
+# valid fixture: WebService/SOAP 占位样例
+vendor_spec:
+  schema_version: "1.0"
+  run_window_minutes: 30
+  severity_policy: "default"
+  interfaces:
+    - vendor_id: medical-insurance
+      interface_id: claim-submit
+      display_name: "医保结算接口（占位）"
+      protocol: webservice
+      host: 127.0.0.1
+      port: 8080
+      base_path: /soap
+      timeout_seconds: 5
+      auth:
+        type: basic
+        username_env: VENDOR_MI_USERNAME
+        secret_env: VENDOR_MI_PASSWORD
+      sample_endpoint:
+        http:
+          method: POST
+          path: /claim/submit
+          headers:
+            Content-Type: text/xml
+          body: ""
+      required_fields:
+        - "$.claim_id"
+  inspection:
+    fail_fast: false

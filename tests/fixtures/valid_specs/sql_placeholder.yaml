@@ -1,0 +1,25 @@
+# valid fixture: SQL 占位样例（演示 not_implemented 不误判为 healthy）
+vendor_spec:
+  schema_version: "1.0"
+  run_window_minutes: 30
+  severity_policy: "default"
+  interfaces:
+    - vendor_id: regional
+      interface_id: read-only
+      display_name: "区域平台只读连接"
+      protocol: sql
+      host: 127.0.0.1
+      port: 1433
+      timeout_seconds: 5
+      auth:
+        type: none
+      sample_endpoint:
+        http:
+          method: GET
+          path: /
+          headers: {}
+          body: ""
+      required_fields:
+        - "$.ok"
+  inspection:
+    fail_fast: false

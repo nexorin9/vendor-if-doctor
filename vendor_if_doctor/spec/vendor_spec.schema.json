@@ -1,0 +1,329 @@
+{
+  "$defs": {
+    "vendor_interface": {
+      "additionalProperties": false,
+      "properties": {
+        "auth": {
+          "oneOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "const": "none"
+                }
+              }
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "realm": {
+                  "type": "string"
+                },
+                "secret_env": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": {
+                  "const": "basic"
+                },
+                "username_env": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "username_env",
+                "secret_env"
+              ]
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "secret_env": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": {
+                  "const": "bearer"
+                }
+              },
+              "required": [
+                "secret_env"
+              ]
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "header_name": {
+                  "type": "string"
+                },
+                "inject": {
+                  "enum": [
+                    "header",
+                    "query"
+                  ],
+                  "type": "string"
+                },
+                "query_param": {
+                  "type": "string"
+                },
+                "secret_env": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": {
+                  "const": "apikey"
+                }
+              },
+              "required": [
+                "secret_env"
+              ]
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "ca_bundle_env": {
+                  "type": "string"
+                },
+                "cert_env": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "key_env": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "type": {
+                  "const": "mtls"
+                }
+              },
+              "required": [
+                "cert_env",
+                "key_env"
+              ]
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "type": {
+                  "const": "mllp"
+                }
+              }
+            }
+          ],
+          "properties": {
+            "type": {
+              "enum": [
+                "none",
+                "basic",
+                "bearer",
+                "apikey",
+                "mtls",
+                "mllp"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "type": "object"
+        },
+        "base_path": {
+          "type": "string"
+        },
+        "display_name": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "host": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "interface_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_\\-]*$",
+          "type": "string"
+        },
+        "port": {
+          "maximum": 65535,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "protocol": {
+          "enum": [
+            "http",
+            "hl7v2",
+            "webservice",
+            "sql"
+          ],
+          "type": "string"
+        },
+        "required_fields": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "sample_endpoint": {
+          "anyOf": [
+            {
+              "additionalProperties": false,
+              "properties": {
+                "http": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "body": {
+                      "type": "string"
+                    },
+                    "headers": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "method": {
+                      "enum": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "PATCH",
+                        "HEAD",
+                        "OPTIONS"
+                      ],
+                      "type": "string"
+                    },
+                    "path": {
+                      "pattern": "^/",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "method",
+                    "path"
+                  ],
+                  "type": "object"
+                }
+              },
+              "required": [
+                "http"
+              ],
+              "type": "object"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "hl7v2": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "message_type": {
+                      "type": "string"
+                    },
+                    "sample_patient_id": {
+                      "type": "string"
+                    },
+                    "trigger_event": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message_type"
+                  ],
+                  "type": "object"
+                }
+              },
+              "required": [
+                "hl7v2"
+              ],
+              "type": "object"
+            }
+          ],
+          "type": "object"
+        },
+        "timeout_seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 120,
+          "type": "number"
+        },
+        "vendor_id": {
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9_\\-]*$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "vendor_id",
+        "interface_id",
+        "display_name",
+        "protocol",
+        "host",
+        "port",
+        "auth",
+        "sample_endpoint"
+      ],
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "vendor_spec": {
+      "additionalProperties": false,
+      "properties": {
+        "inspection": {
+          "additionalProperties": false,
+          "properties": {
+            "fail_fast": {
+              "type": "boolean"
+            },
+            "handover_dir": {
+              "type": "string"
+            },
+            "redact_credentials": {
+              "type": "boolean"
+            },
+            "sqlite_db": {
+              "type": "string"
+            },
+            "tickets_dir": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "interfaces": {
+          "items": {
+            "$ref": "#/$defs/vendor_interface"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "run_window_minutes": {
+          "maximum": 1440,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "schema_version": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "severity_policy": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "interfaces"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "vendor_spec"
+  ],
+  "title": "vendor_spec",
+  "type": "object"
+}
